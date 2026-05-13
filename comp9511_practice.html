@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>COMP9511 期末刷题网页</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--main:#222;--muted:#667085;--brand:#f2b705;--ok:#0f9d58;--bad:#d93025;--line:#e5e7eb;--blue:#2563eb}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Microsoft YaHei",sans-serif;background:var(--bg);color:var(--main)}
+header{background:#111;color:#fff;padding:18px 22px;position:sticky;top:0;z-index:10}header h1{margin:0;font-size:22px}header p{margin:6px 0 0;color:#ddd;font-size:13px}
+.container{display:grid;grid-template-columns:280px 1fr;gap:18px;padding:18px;max-width:1400px;margin:auto}.side,.main{background:var(--card);border-radius:14px;padding:16px;box-shadow:0 2px 10px #00000012}.side{height:calc(100vh - 115px);overflow:auto;position:sticky;top:86px}.section-title{font-weight:700;margin:12px 0 8px}.btn{border:0;border-radius:10px;padding:10px 12px;background:#eee;cursor:pointer;margin:4px 4px 4px 0}.btn:hover{filter:brightness(.96)}.btn.primary{background:var(--brand);font-weight:700}.btn.blue{background:#dbeafe;color:#1d4ed8}.btn.danger{background:#fee2e2;color:#991b1b}.btn.ok{background:#dcfce7;color:#166534}.topic{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px;margin:6px 0;cursor:pointer}.topic.active{border-color:var(--brand);background:#fff8d8;font-weight:700}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}.stat{background:#fafafa;border:1px solid var(--line);border-radius:12px;padding:10px}.stat b{display:block;font-size:22px}.question-card{border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0;background:#fff}.tag{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:999px;padding:4px 9px;font-size:12px;margin-right:6px}.multi{background:#fff7ed;color:#9a3412}.qtitle{font-weight:700;font-size:18px;line-height:1.55;margin:12px 0}.opt{display:block;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;cursor:pointer}.opt:hover{background:#f9fafb}.opt input{margin-right:8px}.explain{display:none;border-left:4px solid var(--brand);background:#fffbea;padding:12px;border-radius:8px;margin-top:12px;line-height:1.65}.correct{color:var(--ok);font-weight:700}.wrong{color:var(--bad);font-weight:700}.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}.search{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px}.hidden{display:none}.progress{height:12px;background:#eee;border-radius:999px;overflow:hidden}.bar{height:100%;background:var(--brand);width:0%}select{padding:9px;border-radius:10px;border:1px solid var(--line)}footer{color:#777;text-align:center;padding:20px}@media(max-width:850px){.container{grid-template-columns:1fr}.side{position:static;height:auto}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header><h1>COMP9511 期末选择题刷题网页</h1><p>按知识点练习｜错题本｜考试模拟｜每题提交后显示答案和详细解释。本页面数据保存在浏览器 localStorage。</p></header>
+<div class="container">
+<aside class="side">
+  <input id="search" class="search" placeholder="搜索题目/知识点..." oninput="renderQuestions()" />
+  <div class="section-title">模式</div>
+  <button class="btn primary" onclick="setMode('practice')">知识点练习</button>
+  <button class="btn blue" onclick="setMode('exam')">考试模拟</button>
+  <button class="btn danger" onclick="setMode('wrong')">错题本</button>
+  <div class="section-title">题目数量</div>
+  <select id="examCount"><option>20</option><option selected>40</option><option>60</option><option>80</option></select>
+  <button class="btn ok" onclick="startExam()">开始模拟</button>
+  <div class="section-title">知识点</div>
+  <div id="topics"></div>
+  <div class="section-title">数据</div>
+  <button class="btn" onclick="resetAnswers()">清空作答记录</button>
+  <button class="btn danger" onclick="clearWrong()">清空错题本</button>
+</aside>
+<main class="main">
+  <div class="stats">
+    <div class="stat"><span>当前题库</span><b id="totalN">0</b></div>
+    <div class="stat"><span>已做</span><b id="doneN">0</b></div>
+    <div class="stat"><span>正确率</span><b id="accN">0%</b></div>
+    <div class="stat"><span>错题</span><b id="wrongN">0</b></div>
+  </div>
+  <div class="progress"><div id="bar" class="bar"></div></div>
+  <div class="toolbar"><span id="modeLabel" class="tag">知识点练习</span><button class="btn" onclick="showAllExplanations()">显示全部解释</button><button class="btn" onclick="hideAllExplanations()">隐藏全部解释</button></div>
+  <div id="questions"></div>
+</main>
+</div>
+<footer>建议：先按知识点刷，再刷错题本，最后做 40–60 题模拟。</footer>
+<script>
+const questions = [
+{t:'Basic Models',type:'single',q:'Conceptual model 和 mental model 的关系，下列说法最准确的是？',o:['Conceptual model 是用户实际操作后的行为数据','Mental model 是设计师写在代码里的功能说明','好设计需要让设计师的 conceptual model 被用户正确理解并形成合理 mental model','Mental model 只和用户记忆有关，与界面设计无关'],a:[2],e:'Conceptual model 是设计师希望系统被理解的方式；mental model 是用户头脑中对系统如何运作的理解。好设计的关键是通过界面、隐喻、反馈等方式让两者尽量一致。'},
+{t:'Basic Models',type:'multiple',q:'Interface metaphor 的优点包括哪些？',o:['降低新系统学习难度','帮助用户利用已有经验理解系统','一定能避免所有设计错误','让计算机系统更容易被不同用户接触和使用'],a:[0,1,3],e:'界面隐喻通过借用用户熟悉领域的知识来帮助理解，比如购物车、信封、剪刀。它不能保证没有错误，甚至可能把旧隐喻的缺陷带入新设计。'},
+{t:'Basic Models',type:'single',q:'一个文件夹图标让用户自然想到“存放文件”，这主要体现了什么？',o:['Fitts’ Law','Interface metaphor','ANOVA','Data logging'],a:[1],e:'文件夹图标借用了现实世界中文件夹的概念，是典型 interface metaphor。'},
+{t:'Design Principles',type:'single',q:'Affordance 指的是？',o:['系统运行速度足够快','外观暗示功能，让用户知道某物可以如何操作','用户完成任务后的满意度','把所有功能放在首页'],a:[1],e:'Affordance 是功能可预见性，例如按钮看起来可点击，滑块看起来可拖动。'},
+{t:'Design Principles',type:'single',q:'Visibility 原则最强调什么？',o:['所有功能都要隐藏以保持简洁','主要功能和系统状态应该容易被用户看到','界面必须使用高饱和颜色','按钮必须放在页面右下角'],a:[1],e:'Visibility 要求重要功能、可操作对象和状态信息可见，让用户知道可以做什么以及系统正在发生什么。'},
+{t:'Design Principles',type:'multiple',q:'下列哪些属于 feedback 的例子？',o:['点击提交后按钮变成加载状态','保存成功后显示提示','错误输入后显示错误原因','把所有按钮颜色设成一样'],a:[0,1,2],e:'Feedback 是用户操作后的系统回应，可以是视觉、听觉或触觉反馈。统一颜色不一定是反馈。'},
+{t:'Design Principles',type:'single',q:'Consistency 的核心是？',o:['不同页面相同元素含义和行为保持一致','所有页面必须完全一样','只允许使用一种颜色','用户不能自定义界面'],a:[0],e:'一致性强调 words、situations、actions 的含义和行为一致，降低学习成本。'},
+{t:'Design Principles',type:'single',q:'Mapping 指的是？',o:['用户数据映射到数据库','控制装置与结果之间存在自然、逻辑或空间对应关系','把图像压缩到网页里','把任务分配给用户'],a:[1],e:'例如炉灶按钮位置与炉头位置对应，或者音量滑块向右代表音量增大，都是 mapping。'},
+{t:'Design Principles',type:'multiple',q:'Constraints 可以通过哪些方式减少用户错误？',o:['未填完表单时禁用提交按钮','删除前二次确认','为输入框提供格式限制','去掉所有错误提示'],a:[0,1,2],e:'Constraints 通过限制无效操作、危险操作确认、输入验证等方式预防错误。'},
+{t:'Design Principles',type:'single',q:'“用户选择国家后，城市列表只显示该国家的城市”，属于哪类约束？',o:['Physical constraint','Semantic/logical constraint','Colour contrast','Social presence'],a:[1],e:'这是利用语义和逻辑关系限制有效选择，防止选择不匹配的城市。'},
+{t:'Heuristics',type:'single',q:'Visibility of system status 要求系统在用户操作后？',o:['不做任何响应','只在出错时响应','及时提供有意义反馈，让用户知道系统状态','隐藏进度以避免用户焦虑'],a:[2],e:'系统状态可见性强调及时、适当、可理解的反馈，例如加载进度、保存成功、上传状态。'},
+{t:'Heuristics',type:'single',q:'Match between system and the real world 主要要求？',o:['使用开发者术语','使用用户熟悉的语言、概念、流程和现实世界对应关系','界面必须模仿现实物体外观','系统逻辑越复杂越好'],a:[1],e:'该原则强调站在用户语言和现实经验角度设计，避免 system-oriented jargon。'},
+{t:'Heuristics',type:'single',q:'User control and freedom 最典型的设计是？',o:['无法返回的支付流程','提供取消、撤销、返回、退出','隐藏所有菜单','强制用户完成全部步骤'],a:[1],e:'用户应能轻易退出错误操作或当前状态，例如 undo、cancel、back。'},
+{t:'Heuristics',type:'multiple',q:'Error prevention 的设计可以包括？',o:['危险操作前确认','输入格式实时检查','容易误点的按钮保持距离','只在用户犯错后显示代码错误'],a:[0,1,2],e:'错误预防比错误恢复更好。错误代码本身不能预防错误，也通常不易理解。'},
+{t:'Heuristics',type:'single',q:'“Recognition rather than recall” 在界面中的最好例子是？',o:['让用户背快捷键','提供可见菜单、历史记录和自动补全','要求用户记住命令行','隐藏常用选项'],a:[1],e:'识别比回忆容易。菜单、列表、推荐、自动补全都能减少记忆负担。'},
+{t:'Heuristics',type:'single',q:'Aesthetic and minimalist design 不是要求？',o:['删除无关内容','减少不必要步骤','只保留与任务相关的信息','把所有信息都塞进一个屏幕'],a:[3],e:'极简设计不是把信息挤在一起，而是去掉无关和低价值内容，同时保持清晰。'},
+{t:'Usability Goals',type:'single',q:'Effectiveness 关注的是？',o:['用户是否能完成目标','用户完成任务用了多少步骤','界面是否好看','用户是否觉得有趣'],a:[0],e:'Effectiveness 是有效性，关注产品是否帮助用户实现目标。'},
+{t:'Usability Goals',type:'single',q:'Efficiency 关注的是？',o:['任务能否用较少时间和步骤完成','用户是否记得品牌颜色','系统是否支持盲文','用户是否喜欢动画'],a:[0],e:'Efficiency 是效率，强调用最少资源、时间、步骤完成任务。'},
+{t:'Usability Goals',type:'multiple',q:'下列哪些是 usability goals？',o:['Effectiveness','Efficiency','Safety','Frustrating'],a:[0,1,2],e:'Frustrating 是负面 user experience goal，不是 usability goal。'},
+{t:'UX Goals',type:'single',q:'User experience goals 主要描述什么？',o:['系统能不能运行','用户使用产品时的感受和体验','数据库结构','代码复用率'],a:[1],e:'UX goals 关注主观体验，例如 enjoyable、motivating、boring、annoying。'},
+{t:'UX Goals',type:'multiple',q:'下列哪些属于 desirable user experience goals？',o:['Satisfying','Enjoyable','Motivating','Annoying'],a:[0,1,2],e:'Annoying 是 undesirable experience。'},
+{t:'Visual Design',type:'single',q:'White space 的作用是？',o:['浪费空间','分隔信息、减少拥挤、提高可读性','让页面看起来内容更多','替代导航菜单'],a:[1],e:'留白可以组织信息、减少视觉噪音、提高 balance 和 clarity。'},
+{t:'Visual Design',type:'single',q:'Proximity 在视觉设计中表示？',o:['距离近的元素会被认为相关','颜色越亮越重要','图标必须写实','所有元素必须居中'],a:[0],e:'接近性用于把相关元素放近，让用户自然理解它们是一组。'},
+{t:'Visual Design',type:'multiple',q:'良好的视觉设计原则包括？',o:['Alignment','Avoid visual noise and clutter','Grouping','随机改变字体和按钮样式'],a:[0,1,2],e:'对齐、减少杂乱、分组都有助于视觉清晰；随机变化会破坏一致性。'},
+{t:'Visual Design',type:'single',q:'RGB 最适合用于？',o:['印刷海报','屏幕显示','纸质名片','油墨混色'],a:[1],e:'RGB 用于屏幕显示；CMYK 常用于印刷。'},
+{t:'Visual Design',type:'single',q:'Complementary colours 的主要作用是？',o:['制造强烈对比，突出元素','让页面完全没有焦点','保证所有文字都不可见','表示所有元素功能相同'],a:[0],e:'互补色在色轮上相对，常用于强调和视觉对比。'},
+{t:'Menus & Icons',type:'single',q:'Cascading menu 的主要缺点是？',o:['不能显示多个层级','需要精确鼠标控制，不适合频繁功能','无法展示任何选项','只能用于手机'],a:[1],e:'级联菜单能显示多层选项，但鼠标移动要求高，频繁功能不适合藏在深层级。'},
+{t:'Menus & Icons',type:'multiple',q:'好的菜单设计应包括？',o:['同类功能邻近放置','常用功能靠前','危险操作隔离','菜单嵌套越深越好'],a:[0,1,2],e:'菜单嵌套通常应少于三层，过深会增加寻找成本。'},
+{t:'Menus & Icons',type:'single',q:'剪刀图标代表“剪切”，属于哪类 icon？',o:['Similar','Analogical','Arbitrary','Heatmap'],a:[1],e:'剪刀和剪切动作之间是类比关系，所以是 analogical icon。'},
+{t:'Accessibility',type:'single',q:'Screen reader 主要帮助哪类用户？',o:['听力障碍用户','盲人或严重视觉障碍用户','只会打字的用户','专家用户'],a:[1],e:'Screen reader 将屏幕内容转成语音或盲文输出，主要帮助视觉障碍用户。'},
+{t:'Accessibility',type:'multiple',q:'检查 accessibility 时应关注？',o:['image alt','video captions','keyboard control','color contrast'],a:[0,1,2,3],e:'图片替代文本、视频字幕、键盘可操作性、颜色对比度都是无障碍检查重点。'},
+{t:'Accessibility',type:'single',q:'按钮不小于 44x44pt 主要是为了？',o:['提高触控可达性，帮助运动障碍或移动端用户','提高数据库性能','减少服务器成本','支持 Unicode'],a:[0],e:'较大的 touch target 能减少误触，提高可访问性和移动端 usability。'},
+{t:'Responsive & Adaptive',type:'single',q:'Responsive design 的核心是？',o:['多套页面，对号入座','一套页面，通过流体布局和断点适配多设备','只为手机设计','只靠服务器判断设备'],a:[1],e:'响应式设计使用 fluid grids、flexible images、CSS breakpoints，让一套页面适配不同屏幕。'},
+{t:'Responsive & Adaptive',type:'single',q:'Adaptive design 的核心是？',o:['一套页面连续变化','多套固定版本，根据设备/情境加载','完全不考虑设备','只改变颜色'],a:[1],e:'自适应设计为不同设备准备不同布局或资源，常通过 context-aware 方式加载对应版本。'},
+{t:'Responsive & Adaptive',type:'multiple',q:'移动端适配策略可以包括？',o:['Information density shifts','Navigation restructuring','Progressive disclosure','强制显示桌面端全部复杂功能'],a:[0,1,2],e:'移动端常降低信息密度、重构导航、渐进披露，避免拥挤和认知过载。'},
+{t:'Responsive & Adaptive',type:'single',q:'“手机端把顶部菜单改成汉堡菜单”属于？',o:['Navigation restructuring','Fitts’ Law','Recall','ANOVA'],a:[0],e:'根据屏幕宽度改变导航结构，是 navigation restructuring。'},
+{t:'UCD',type:'single',q:'Brainstorming 最适合在什么时候使用？',o:['项目初期探索 problem space','产品发布后修复服务器','统计显著性检验时','写最终代码时'],a:[0],e:'头脑风暴用于项目早期产生想法、探索问题空间和可能方案。'},
+{t:'UCD',type:'single',q:'Affinity diagram 的主要作用是？',o:['把大量想法或观察按自然关系分组，寻找主题','计算点击时间','制作高保真动画','检查颜色格式'],a:[0],e:'亲和图常用于 brainstorming 或访谈后，把混乱数据整理成 patterns/themes。'},
+{t:'UCD',type:'multiple',q:'Problem statement 通常包括？',o:['Ideal','Reality','Consequences','Proposal'],a:[0,1,2,3],e:'问题陈述常用结构是理想状态、现实状态、后果和解决提案。'},
+{t:'UCD',type:'single',q:'Primary user 指的是？',o:['直接操作产品完成任务的人','只阅读系统输出的人','开发者本人','所有不受影响的人'],a:[0],e:'Primary/direct users 是直接与系统交互的人；secondary users 不直接操作但受结果影响。'},
+{t:'Data Gathering',type:'single',q:'Exploratory interview 主要用于？',o:['项目早期理解用户和现有体验','计算系统响应时间','替代所有问卷','最终上线后营销'],a:[0],e:'探索性访谈用于早期理解潜在用户、需求和问题。'},
+{t:'Data Gathering',type:'multiple',q:'好的 interview 问题设计应避免？',o:['Leading questions','Jargon','过长问题','与产品相关的问题'],a:[0,1,2],e:'访谈应避免诱导、专业术语和过长问题；问题应与研究目标和产品相关。'},
+{t:'Data Gathering',type:'single',q:'Semi-structured interview 的特点是？',o:['只有封闭式问题','完全无固定流程','有预设问题，也允许追问','不能获取深度数据'],a:[2],e:'半结构化访谈在可比较性和深度之间取得平衡。'},
+{t:'Data Gathering',type:'single',q:'Focus group 特别适合发现什么？',o:['不同用户 terminology/expectations 的冲突','CPU 温度','代码 bug 数量','浏览器宽度'],a:[0],e:'焦点小组能让参与者互动，适合发现不同群体之间的术语、期望和观点冲突。'},
+{t:'Data Gathering',type:'single',q:'Logs and web analytics 的主要局限是？',o:['无法获得大规模数据','无法知道行为背后的原因','不能记录点击','一定会让用户紧张'],a:[1],e:'日志能客观记录行为，但通常无法解释用户为什么这么做。'},
+{t:'Data Analysis',type:'single',q:'Histogram 最适合展示？',o:['连续数据的分布，如任务完成时间','两个变量相关性','少量类别占比','用户访谈关键词'],a:[0],e:'直方图用于展示连续数据分布、集中趋势和离散情况。'},
+{t:'Data Analysis',type:'single',q:'Scatter plot 适合用于？',o:['展示两个连续变量之间关系','展示菜单层级','展示单一文本内容','替代问卷'],a:[0],e:'散点图可用于年龄 vs 完成时间、频率 vs 满意度等变量关系分析。'},
+{t:'Data Analysis',type:'single',q:'Heatmap 常用于？',o:['网页点击热区或眼动关注区域','文本翻译','音频转写','多语言编码'],a:[0],e:'热力图用颜色深浅表达数值大小，常用于点击热区和眼动结果。'},
+{t:'Persona & Scenario',type:'single',q:'Persona 是？',o:['真实用户的身份证信息','代表用户群体的虚构角色','代码测试账号','问卷统计公式'],a:[1],e:'Persona 是 fictional character，用于代表不同用户类型和需求。'},
+{t:'Persona & Scenario',type:'single',q:'Task scenario 在 usability test 中应该怎样写？',o:['告诉用户每一步点击哪里','给用户真实目标和背景，不给具体操作步骤','只写系统内部逻辑','只写开发者需求'],a:[1],e:'测试任务应告诉用户目标，而不是提示操作路径，否则无法真实评估可用性。'},
+{t:'Requirements & Prototype',type:'single',q:'Functional requirement 关注？',o:['系统应该做什么','系统做得怎么样','界面是否漂亮','用户情绪'],a:[0],e:'功能需求描述系统具体行为和功能，例如登录、搜索、分享。'},
+{t:'Requirements & Prototype',type:'single',q:'Non-functional requirement 关注？',o:['系统质量属性，如性能、安全、可用性','按钮是否存在','用户是否能点击注册','具体业务流程'],a:[0],e:'非功能需求描述系统应该做到什么质量，例如 security、usability、performance、accessibility。'},
+{t:'Requirements & Prototype',type:'single',q:'Low-fidelity prototype 最适合？',o:['早期探索多个设计概念','最终上线替代真实系统','测试精细动画','部署服务器'],a:[0],e:'低保真原型便宜、快速、易改，适合早期概念探索和沟通。'},
+{t:'Requirements & Prototype',type:'single',q:'High-fidelity prototype 的缺点是？',o:['开发成本和时间较高','不能交互','完全无法测试导航','一定比纸原型差'],a:[0],e:'高保真原型更真实、可交互，但成本高、耗时，不适合太早用于需求探索。'},
+{t:'Usability Evaluation',type:'multiple',q:'Usability test 的量化指标可以包括？',o:['任务完成时间','错误数量','鼠标点击次数','用户口头抱怨原因'],a:[0,1,2],e:'前三个是 quantitative metrics；用户抱怨原因属于 qualitative data。'},
+{t:'Usability Evaluation',type:'single',q:'每类 persona 通常测试多少用户可以发现多数问题？',o:['1 个','约 5 个','至少 100 个','越多越好没有停止标准'],a:[1],e:'常见 Nielsen 思路是每类 persona 约 5 个用户即可发现大量可用性问题；当不再出现新问题时可停止。'},
+{t:'Usability Evaluation',type:'single',q:'Think aloud 方法要求用户？',o:['测试后写论文','边操作边说出想法、感受和意图','只填写选择题','不能说话'],a:[1],e:'Think aloud 能帮助研究者理解用户认知过程和困惑原因。'},
+{t:'Usability Evaluation',type:'multiple',q:'Test plan 可以包括？',o:['测试目的','测试流程','角色分工','consent form 和 logging sheet'],a:[0,1,2,3],e:'完整测试计划应说明目的、流程、人员责任、任务脚本、问卷、同意书和记录表。'},
+{t:'Usability Evaluation',type:'single',q:'Severity rating 中 show stopper 通常表示？',o:['美观问题','修复前不能发布','非可用性问题','可以永远不修'],a:[1],e:'Show stopper 是最严重问题，会阻止发布。'},
+{t:'Performance Models',type:'single',q:'Keystroke-Level Model 主要用于？',o:['预测或比较完成任务的操作时间','分析用户文化背景','生成图像','评估伦理风险'],a:[0],e:'KLM 把任务拆成 K、P、H、M、B、R 等操作，估计完成时间，用于比较不同操作方案。'},
+{t:'Performance Models',type:'single',q:'KLM 中 M 通常表示？',o:['Mouse button','Mental preparation','Memory loss','Menu item'],a:[1],e:'M 是 mental preparation，表示用户准备下一步操作所需的认知时间。'},
+{t:'Performance Models',type:'single',q:'Fitts’ Law 告诉我们？',o:['目标越大越近，越容易快速点击','文字越多越好','问卷越长越准','颜色越亮越安全'],a:[0],e:'Fitts’ Law 预测指向目标所需时间，距离越短、目标越大，移动时间越少。'},
+{t:'Ethics',type:'multiple',q:'HCI 数据收集中的伦理原则包括？',o:['Voluntary participation','Informed consent','Privacy and confidentiality','Minimising harm'],a:[0,1,2,3],e:'HCI 涉及真实人类和个人数据，必须自愿参与、知情同意、保护隐私并最小化伤害。'},
+{t:'Ethics',type:'single',q:'Informed consent 要求参与者知道？',o:['研究目的、要做什么、风险、数据如何使用','研究者的考试分数','其他参与者姓名','所有源代码'],a:[0],e:'知情同意要求参与者在参与前理解研究内容、风险、记录方式和数据用途，并自愿同意。'},
+{t:'Cognitive Psychology',type:'single',q:'Working memory 的设计启示是？',o:['可以让用户跨页面记大量信息','界面应减少记忆负担和不必要搜索','信息越分散越好','不需要反馈'],a:[1],e:'工作记忆容量有限，因此要整合相关信息、减少搜索、避免跨屏记忆。'},
+{t:'Cognitive Psychology',type:'single',q:'Sensory memory 的特点是？',o:['长期无限存储','以原始感官形式短暂保存信息','只存储概念知识','等同于专家 schema'],a:[1],e:'感觉记忆保存视觉/听觉等原始信息，持续时间极短。'},
+{t:'Cognitive Psychology',type:'multiple',q:'增强记忆的方法包括？',o:['Chunking','Organization','Elaboration','强迫用户回忆隐藏命令'],a:[0,1,2],e:'组块化、组织和精细化都能帮助记忆；隐藏命令会增加 recall 负担。'},
+{t:'Gestalt & Attention',type:'single',q:'Gestalt proximity 原则说明？',o:['距离近的元素容易被认为是一组','颜色相同就一定危险','声音比视觉重要','专家不需要菜单'],a:[0],e:'接近性是格式塔组织原则之一，可用于分组和信息结构设计。'},
+{t:'Gestalt & Attention',type:'single',q:'Focal point principle 指？',o:['最突出的视觉元素优先吸引注意','用户永远先看左下角','所有元素都应该一样突出','文字必须比图像大'],a:[0],e:'通过颜色、大小、形状等差异可以突出关键元素，引导用户注意力。'},
+{t:'Cognitive Load',type:'single',q:'Split attention effect 出现于？',o:['相关信息物理分开，用户必须自己整合','信息过少无法学习','系统自动保存','按钮太大'],a:[0],e:'当图和说明分开、跨屏或跨页时，用户需要用工作记忆整合信息，增加认知负荷。'},
+{t:'Cognitive Load',type:'single',q:'Redundancy effect 的设计建议是？',o:['删除不必要的重复信息','所有内容重复三遍','越冗余越专业','只给专家看新手教程'],a:[0],e:'冗余信息会占用认知资源。但是否冗余取决于材料性质和用户 expertise。'},
+{t:'Cognitive Load',type:'single',q:'Expertise reversal effect 指？',o:['对新手有帮助的指导对专家可能变成负担','专家永远需要更多解释','新手比专家更快','所有用户界面应完全相同'],a:[0],e:'新手需要整合、提示、示例；专家已有 schema，过多指导会干扰效率。'},
+{t:'Cognitive Load',type:'single',q:'Extraneous cognitive load 的设计目标是？',o:['最大化','最小化','保持不变','完全由任务本身决定'],a:[1],e:'Extraneous load 来源于信息呈现和设计不佳，是可改变的，应尽量最小化。'},
+{t:'Cognitive Load',type:'single',q:'Germane cognitive load 的设计目标是？',o:['最大化，用于促进 schema 构建','最小化，因为它来自糟糕设计','完全不能改变','等同于系统错误'],a:[0],e:'Germane load 是有助于学习和 schema 构建的认知努力，应鼓励。'},
+{t:'Expert vs Novice',type:'single',q:'Novice 用户通常需要？',o:['更多引导、示例、反馈和简单任务','隐藏所有帮助','只给快捷键','最少反馈'],a:[0],e:'新手知识和 schema 少，需要 integrated information、提示、帮助、反馈和 worked examples。'},
+{t:'Expert vs Novice',type:'single',q:'Expert 用户通常更喜欢？',o:['强制教程','快捷方式、高级功能、快速响应、少冗余提示','每一步弹窗确认','禁用高级功能'],a:[1],e:'专家已有大量 schema，需要效率、控制和高级功能，不喜欢重复教学。'},
+{t:'Expert vs Novice',type:'single',q:'Training wheel technique 主要适合？',o:['新手安全学习，禁用或隐藏复杂高级功能','专家最大化功能','服务器监控','问卷分析'],a:[0],e:'Training wheels 是新手模式，让用户只接触基础、安全的功能，避免复杂选项造成错误。'},
+{t:'Human-Centred AI',type:'single',q:'ANI 指的是？',o:['弱人工智能，解决特定领域问题','通用人工智能，已完全实现','超人工智能，现实中普遍存在','国际化设计'],a:[0],e:'ANI 是 Artificial Narrow Intelligence，只能处理特定任务。AGI 和 ASI 目前未实现。'},
+{t:'Human-Centred AI',type:'single',q:'N-gram 与 LLM 的关键区别是？',o:['N-gram 只看局部固定长度上下文，LLM 可处理长上下文和语义','N-gram 比 LLM 更通用','LLM 只能看两个词','二者完全相同'],a:[0],e:'N-gram 基于局部统计，LLM 通过神经网络处理更长上下文和语义关系。'},
+{t:'Human-Centred AI',type:'single',q:'Recall 在癌症筛查中通常很重要，因为？',o:['宁可多报也不要漏掉真正阳性','只关心预测为阳性的准确率','数据必须平衡','不需要 FN'],a:[0],e:'Recall = TP/(TP+FN)，关注找出多少真正阳性。医疗筛查中漏诊代价高。'},
+{t:'Human-Centred AI',type:'single',q:'Object detection 与 image classification 的区别是？',o:['检测不仅分类，还定位物体','分类能给每个像素标签','检测不能处理图片','二者无区别'],a:[0],e:'Image classification 给整图标签；object detection 给类别和位置边界框；segmentation 到像素级。'},
+{t:'Social Computing',type:'single',q:'Social computing 研究的是？',o:['计算技术如何支持社交交互、连接和协作','只研究 CPU','只研究单机游戏渲染','只研究数据库'],a:[0],e:'Social computing 是多学科领域，关注技术支持社交互动、社群、协作和社会结果。'},
+{t:'Social Computing',type:'single',q:'Collaborative computing 是 social computing 的？',o:['子集，重点是群体合作解决问题','反义词','硬件类型','颜色模型'],a:[0],e:'协作计算关注多人共同解决问题、决策和信息共享，如 Google Docs。'},
+{t:'Social Computing',type:'multiple',q:'Collaborative computing 的挑战包括？',o:['Building trust','Quality','Coordination mechanisms','Social translucence'],a:[0,1,2,3],e:'远程/多人协作需要建立信任、保证质量、协调工作，并让成员知道彼此状态和行动。'},
+{t:'Crowd Computing',type:'single',q:'Crowd sourcing 更强调？',o:['把任务通过互联网分发给大量人群','所有人共同解决不可拆问题','机器自动完成全部任务','本地化翻译'],a:[0],e:'Crowdsourcing 强调分布式任务外包；crowd computing 更强调集体解决个体或计算机难以独立解决的问题。'},
+{t:'Crowd Computing',type:'single',q:'适合 crowd computing 的问题通常具有？',o:['可拆分、机器难解但人能解、结果可整合','完全不能拆分','只有专家能做且无法整合','无需质量控制'],a:[0],e:'众人计算适合可拆分、人类可解决、专家成本高且可整合答案的问题。'},
+{t:'Internationalisation',type:'single',q:'Internationalisation 指？',o:['为本地化设计和开发基础设施','把英语翻译成中文这一动作','用户测试实验室','删除所有文化元素'],a:[0],e:'Internationalisation 是提前设计架构、编码、资源分离等，让 localisation 成为可能。'},
+{t:'Internationalisation',type:'single',q:'Localisation 指？',o:['将应用适应具体本地语言和文化条件','只使用 UTF-8','只改后端代码','不需要测试'],a:[0],e:'Localisation 包括翻译文本、调整图标、颜色、日期、货币、媒体和文化表达，并应单独测试。'},
+{t:'Internationalisation',type:'multiple',q:'本地化需要考虑哪些差异？',o:['文本方向 LTR/RTL','日期时间货币格式','颜色文化含义','图标和隐喻'],a:[0,1,2,3],e:'不同国家/文化在语言、方向、格式、颜色、图像、单位、日历等方面都可能不同。'},
+{t:'Internationalisation',type:'single',q:'Pseudo-localization 的作用是？',o:['不用真实翻译也能预览翻译后 UI 是否会溢出或布局异常','直接完成最终翻译','压缩图片','提高 KLM 速度'],a:[0],e:'伪本地化用修改过的原语言模拟翻译效果，用于提前发现 UI 宽度、编码和布局问题。'},
+{t:'Metaverse',type:'single',q:'Metaverse 设计中沉浸感主要依赖？',o:['交互、感知反馈、空间呈现和社会存在感','只靠文字菜单','只靠问卷','只靠低保真纸原型'],a:[0],e:'元宇宙/虚拟环境强调沉浸、presence、 embodied interaction 和 social interaction。'},
+{t:'Gamification',type:'multiple',q:'Gamification 常用来提高 engagement 的机制包括？',o:['Points','Badges','Leaderboards','隐藏核心反馈'],a:[0,1,2],e:'积分、徽章、排行榜、挑战、进度条等常用于激励用户参与；隐藏反馈会降低动机。'},
+{t:'Input Output Sensing',type:'single',q:'Voice input 对设计的启示是？',o:['适合免手操作和运动障碍用户，但需要考虑识别错误与反馈','完全替代所有视觉界面','不需要确认危险操作','只能用于游戏'],a:[0],e:'语音输入可提高可访问性和情境适配，但系统要处理误识别、隐私和确认反馈。'},
+{t:'Input Output Sensing',type:'single',q:'Sensing technologies 在 HCI 中主要用于？',o:['感知用户、环境或动作，从而支持更自然/情境化交互','只存储文本','只画图标','替代伦理审查'],a:[0],e:'传感技术如摄像头、GPS、加速度计、生物传感器可支持 context-aware 和 embodied interaction。'}
+];
+let mode='practice', selectedTopic='全部', examSet=[];
+const storeKey='comp9511_answers_v1', wrongKey='comp9511_wrong_v1';
+function getAnswers(){return JSON.parse(localStorage.getItem(storeKey)||'{}')}
+function setAnswers(v){localStorage.setItem(storeKey,JSON.stringify(v))}
+function getWrong(){return JSON.parse(localStorage.getItem(wrongKey)||'[]')}
+function setWrong(v){localStorage.setItem(wrongKey,JSON.stringify([...new Set(v)]))}
+function topics(){return ['全部',...Array.from(new Set(questions.map(q=>q.t)))]}
+function renderTopics(){document.getElementById('topics').innerHTML=topics().map(t=>`<button class="topic ${selectedTopic===t?'active':''}" onclick="selectedTopic='${t}';mode='practice';renderTopics();renderQuestions()">${t}</button>`).join('')}
+function setMode(m){mode=m;document.getElementById('modeLabel').textContent=m==='practice'?'知识点练习':m==='exam'?'考试模拟':'错题本';renderQuestions()}
+function startExam(){mode='exam';let n=+document.getElementById('examCount').value;examSet=[...questions].sort(()=>Math.random()-0.5).slice(0,n).map(q=>questions.indexOf(q));document.getElementById('modeLabel').textContent='考试模拟';renderQuestions()}
+function filtered(){let arr=questions.map((q,i)=>({...q,i}));let s=document.getElementById('search').value.trim().toLowerCase();if(mode==='practice'&&selectedTopic!=='全部')arr=arr.filter(q=>q.t===selectedTopic);if(mode==='wrong'){let w=getWrong();arr=arr.filter(q=>w.includes(q.i))}if(mode==='exam'){if(examSet.length===0) startExam(); arr=arr.filter(q=>examSet.includes(q.i))}if(s)arr=arr.filter(q=>(q.q+q.t+q.o.join(' ')+q.e).toLowerCase().includes(s));return arr}
+function renderQuestions(){let arr=filtered();let ans=getAnswers(), wrong=getWrong();let done=arr.filter(q=>ans[q.i]).length;let right=arr.filter(q=>ans[q.i]&&same(ans[q.i].choice,q.a)).length;document.getElementById('totalN').textContent=arr.length;document.getElementById('doneN').textContent=done;document.getElementById('accN').textContent=done?Math.round(right/done*100)+'%':'0%';document.getElementById('wrongN').textContent=wrong.length;document.getElementById('bar').style.width=arr.length?done/arr.length*100+'%':'0%';
+ document.getElementById('questions').innerHTML=arr.map((q,idx)=>card(q,idx,ans[q.i])).join('')||'<p>没有题目。</p>';}
+function card(q,idx,rec){let inputType=q.type==='single'?'radio':'checkbox';let name='q'+q.i;let selected=rec?rec.choice:[];let submitted=!!rec;let isRight=submitted&&same(selected,q.a);return `<div class="question-card" id="card${q.i}"><span class="tag">${q.t}</span><span class="tag ${q.type==='multiple'?'multi':''}">${q.type==='multiple'?'多选':'单选'}</span><div class="qtitle">${idx+1}. ${q.q}</div>${q.o.map((op,j)=>`<label class="opt"><input type="${inputType}" name="${name}" value="${j}" ${selected.includes(j)?'checked':''} ${submitted?'disabled':''}> ${String.fromCharCode(65+j)}. ${op}</label>`).join('')}<button class="btn primary" onclick="submitQ(${q.i})" ${submitted?'disabled':''}>提交答案</button>${submitted?`<button class="btn" onclick="retryQ(${q.i})">重做本题</button>`:''}<div class="explain" style="display:${submitted?'block':'none'}"><div class="${isRight?'correct':'wrong'}">${isRight?'回答正确':'回答错误'}。正确答案：${q.a.map(x=>String.fromCharCode(65+x)).join('、')}</div><div><b>解释：</b>${q.e}</div></div></div>`}
+function submitQ(i){let q=questions[i];let els=[...document.querySelectorAll(`#card${i} input:checked`)];if(!els.length){alert('请先选择答案');return}let choice=els.map(e=>+e.value).sort((a,b)=>a-b);let ans=getAnswers();ans[i]={choice,time:Date.now()};setAnswers(ans);let wrong=getWrong();if(!same(choice,q.a)){wrong.push(i)}else{wrong=wrong.filter(x=>x!==i)}setWrong(wrong);renderQuestions();setTimeout(()=>document.getElementById('card'+i)?.scrollIntoView({behavior:'smooth',block:'center'}),50)}
+function same(a,b){a=[...a].sort((x,y)=>x-y);b=[...b].sort((x,y)=>x-y);return a.length===b.length&&a.every((v,i)=>v===b[i])}
+function retryQ(i){let ans=getAnswers();delete ans[i];setAnswers(ans);renderQuestions()}
+function resetAnswers(){if(confirm('确认清空所有作答记录？')){localStorage.removeItem(storeKey);renderQuestions()}}
+function clearWrong(){if(confirm('确认清空错题本？')){localStorage.removeItem(wrongKey);renderQuestions()}}
+function showAllExplanations(){document.querySelectorAll('.explain').forEach(e=>e.style.display='block')}
+function hideAllExplanations(){document.querySelectorAll('.explain').forEach(e=>{if(!e.closest('.question-card').querySelector('button[disabled]'))e.style.display='none'})}
+renderTopics();renderQuestions();
+</script>
+</body>
+</html>
